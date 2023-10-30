@@ -46,6 +46,42 @@ async function seedUsers() {
   }
 }
 
+async function seedRevenue() {
+  try {
+    // Create the "revenue" table if it doesn't exist
+    const createTable = await sql`
+      CREATE TABLE IF NOT EXISTS revenue (
+        month VARCHAR(4) NOT NULL UNIQUE,
+        revenue INT NOT NULL
+      );
+    `;
+
+    console.log(`Created "revenue" table`);
+
+    // Insert data into the "revenue" table
+    const insertedRevenue = await Promise.all(
+      revenue.map(
+        (rev) => sql`
+        INSERT INTO revenue (month, revenue)
+        VALUES (${rev.month}, ${rev.revenue})
+        ON CONFLICT (month) DO NOTHING;
+      `,
+      ),
+    );
+
+    console.log(`Seeded ${insertedRevenue.length} revenue`);
+
+    return {
+      createTable,
+      revenue: insertedRevenue,
+    };
+  } catch (error) {
+    console.error('Error seeding revenue:', error);
+    throw error;
+  }
+}
+
+
 async function seedInvoices() {
   try {
     await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
@@ -125,44 +161,11 @@ async function seedCustomers() {
   }
 }
 
-async function seedRevenue() {
-  try {
-    // Create the "revenue" table if it doesn't exist
-    const createTable = await sql`
-      CREATE TABLE IF NOT EXISTS revenue (
-        month VARCHAR(4) NOT NULL UNIQUE,
-        revenue INT NOT NULL
-      );
-    `;
-
-    console.log(`Created "revenue" table`);
-
-    // Insert data into the "revenue" table
-    const insertedRevenue = await Promise.all(
-      revenue.map(
-        (rev) => sql`
-        INSERT INTO revenue (month, revenue)
-        VALUES (${rev.month}, ${rev.revenue})
-        ON CONFLICT (month) DO NOTHING;
-      `,
-      ),
-    );
-
-    console.log(`Seeded ${insertedRevenue.length} revenue`);
-
-    return {
-      createTable,
-      revenue: insertedRevenue,
-    };
-  } catch (error) {
-    console.error('Error seeding revenue:', error);
-    throw error;
-  }
-}
 
 (async () => {
   await seedUsers();
   await seedCustomers();
-  await seedInvoices();
+  
   await seedRevenue();
+  await seedInvoices();
 })();

@@ -9,8 +9,11 @@ import {
   Revenue,
 } from './definitions';
 import { formatCurrency } from './utils';
+import { unstable_noStore as noStore } from 'next/cache';
+
 
 export async function fetchRevenue() {
+  debugger
   // Add noStore() here prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
 
@@ -23,9 +26,9 @@ export async function fetchRevenue() {
 
     const data = await sql<Revenue>`SELECT * FROM revenue`;
 
-    // console.log('Data fetch complete after 3 seconds.');
+     console.log('Data fetch complete after 3 seconds.');
 
-    return data.rows;
+    return data?.rows;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch revenue data.');
@@ -34,6 +37,8 @@ export async function fetchRevenue() {
 
 export async function fetchLatestInvoices() {
   try {
+    noStore();
+
     const data = await sql<LatestInvoiceRaw>`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
       FROM invoices
@@ -54,6 +59,8 @@ export async function fetchLatestInvoices() {
 
 export async function fetchCardData() {
   try {
+    noStore();
+
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
@@ -93,6 +100,8 @@ export async function fetchFilteredInvoices(
   currentPage: number,
 ) {
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+  noStore();
+
 
   try {
     const invoices = await sql<InvoicesTable>`
@@ -125,6 +134,8 @@ export async function fetchFilteredInvoices(
 
 export async function fetchInvoicesPages(query: string) {
   try {
+    noStore();
+
     const count = await sql`SELECT COUNT(*)
     FROM invoices
     JOIN customers ON invoices.customer_id = customers.id
@@ -146,6 +157,7 @@ export async function fetchInvoicesPages(query: string) {
 
 export async function fetchInvoiceById(id: string) {
   try {
+    
     const data = await sql<InvoiceForm>`
       SELECT
         invoices.id,
